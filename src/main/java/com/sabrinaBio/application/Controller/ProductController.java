@@ -2,6 +2,8 @@ package com.sabrinaBio.application.Controller;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -34,15 +36,17 @@ public class ProductController {
 	
 	private final ProductRepository productRepository;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private static final ZoneId TUNISIA_ZONE = ZoneId.of("Africa/Tunis");
 
     @PostMapping("/newProduct")
     public ResponseEntity<?> createNewProduct(@RequestBody String productJson) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
         Product product = objectMapper.readValue(productJson, Product.class);
-        
+       
         try {
+        if(product.isInSold()) {
             LocalDate currentDate = LocalDate.now();
-            DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE; // Assuming format like "2024-12-29"
+            DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE; 
             String currentDateStr = currentDate.format(formatter);
             LocalDate promotionStartDate = LocalDate.parse(product.getStartDate(), formatter);
       
@@ -55,6 +59,7 @@ public class ProductController {
             if (product.getCreationDate() == null || product.getCreationDate().isEmpty()) {
                 product.setCreationDate(currentDateStr);
             }
+            }
             
             Product savedProduct = productRepository.save(product);
             return ResponseEntity.ok(savedProduct);
@@ -66,6 +71,7 @@ public class ProductController {
             return ResponseEntity.badRequest()
                 .body("Error processing product: " + e.getMessage());
         }
+        
     }
 	
 	@GetMapping("/getAllProducts")
@@ -150,40 +156,104 @@ public class ProductController {
 	    }
 	}
 
-	@Scheduled(cron = "0 0 0 * * *")
-    @Transactional
-    public void updateSaleStatus() {
-        LocalDate currentDate = LocalDate.now();
-        List<Product> products = productRepository.findByActiveTrue();
-        
-        for (Product product : products) {
-            if (product.getStartDate() != null && product.getLastDate() != null) {
-                LocalDate startDate = LocalDate.parse(product.getStartDate(), DATE_FORMATTER);
-                LocalDate endDate = LocalDate.parse(product.getLastDate(), DATE_FORMATTER);
-                boolean shouldBeInSale = !currentDate.isBefore(startDate) && !currentDate.isAfter(endDate);
-                if (product.isPromotion() != shouldBeInSale) {
-                    product.setPromotion(shouldBeInSale);
-                    productRepository.save(product);
-                }
-            }
-        }
-    }
+	@Scheduled(cron = "0 0 0 * * *", zone = "Africa/Tunis")
+	@Transactional
+	public void updateSaleStatus() {
+	    try {
+	        log.info("Starting to update sale status at {}", LocalDateTime.now(TUNISIA_ZONE));
+	        
+	        // Get current date in Tunisia timezone
+	        LocalDate currentDate = LocalDate.now(TUNISIA_ZONE);
+	        LocalDate yesterdayDate = LocalDate.now(TUNISIA_ZONE).minusDays(1);
+	        log.info("Current date for comparison (Tunisia): {}", currentDate);
+	        
+	        // Fetch products whose startDate or lastDate is today
+	        List<Product> products = productRepository.findByStartOrEndDate(currentDate.toString(),yesterdayDate.toString());
+	        log.info("Found {} products to check for sale status", products.size());
+	        
+	        for (Product product : products) {
+	            try {
+	                if (product.getStartDate() != null && product.getLastDate() != null) {
+	                    LocalDate startDate = LocalDate.parse(product.getStartDate(), DATE_FORMATTER);
+	                    LocalDate endDate = LocalDate.parse(product.getLastDate(), DATE_FORMATTER);
+	                    
+	                    log.info("Product ID: {}, Start: {}, End: {}, Current: {}", 
+	                        product.getId(), startDate, endDate, currentDate);
+	                    
+	                    boolean shouldBeInPromotion = 
+	                        (currentDate.isEqual(startDate) || currentDate.isAfter(startDate)) && 
+	                        (currentDate.isEqual(endDate) || currentDate.isBefore(endDate));
+	                    
+	                    if (product.isPromotion() != shouldBeInPromotion) {
+	                        log.info("Updating promotion status for product {} from {} to {}", 
+	                            product.getId(), product.isPromotion(), shouldBeInPromotion);
+	                        product.setPromotion(shouldBeInPromotion);
+	                        
+	                        // If promotion ends, set inSold to false and reset dates
+	                        if (!shouldBeInPromotion) {
+	                            log.info("Promotion ended for product {}. Setting inSold to false.", product.getId());
+	                            product.setInSold(false);
+	                            product.setSoldRatio(0);
+	                            // Optionally, you can reset dates if required, but it's not mandatory
+	                            product.setStartDate(null); // or ""
+	                            product.setLastDate(null); // or ""
+	                        }
+	                        
+	                        // Save only if changes have been made
+	                        productRepository.save(product);
+	                    }
+	                }
+	            } catch (DateTimeParseException e) {
+	                log.error("Error parsing dates for product {}: {}", product.getId(), e.getMessage());
+	            }
+	        }
+	        
+	        log.info("Completed updating sale status");
+	        
+	    } catch (Exception e) {
+	        log.error("Unexpected error in updateSaleStatus: {}", e.getMessage(), e);
+	    }
+	}
 
-    @Scheduled(cron = "0 0 0 * * *")
+
+	@Scheduled(cron = "0 0 0 * * *", zone = "Africa/Tunis")
     @Transactional
     public void updateNewProductStatus() {
-        LocalDate currentDate = LocalDate.now();
-        List<Product> products = productRepository.findByActiveTrue();
-        
-        for (Product product : products) {
-            if (product.getCreationDate() != null && product.isProductNew()) {
-                LocalDate creationDate = LocalDate.parse(product.getCreationDate(), DATE_FORMATTER);
-                LocalDate oneMonthAfterCreation = creationDate.plusMonths(1);                
-                if (currentDate.isAfter(oneMonthAfterCreation)) {
-                    product.setProductNew(false);
-                    productRepository.save(product);
+        try {
+            log.info("Starting to update new product status at {}", LocalDateTime.now(TUNISIA_ZONE));
+            
+            // Get current date in Tunisia timezone
+            LocalDate currentDate = LocalDate.now(TUNISIA_ZONE);
+            log.info("Current date for comparison (Tunisia): {}", currentDate);
+            
+            List<Product> products = productRepository.findByActiveTrueAndProductNewTrue();
+            log.info("Found {} active products to check for new status", products.size());
+            
+            for (Product product : products) {
+                try {
+                    if (product.getCreationDate() != null && product.isProductNew()) {
+                        LocalDate creationDate = LocalDate.parse(product.getCreationDate(), DATE_FORMATTER);
+                        LocalDate oneMonthAfterCreation = creationDate.plusMonths(1);
+                        
+                        log.info("Product ID: {}, Creation Date: {}, One Month After: {}, Current: {}", 
+                            product.getId(), creationDate, oneMonthAfterCreation, currentDate);
+                        
+                        if (currentDate.isAfter(oneMonthAfterCreation)) {
+                            log.info("Updating new product status to false for product {}", product.getId());
+                            product.setProductNew(false);
+                            productRepository.save(product);
+                        }
+                    }
+                } catch (DateTimeParseException e) {
+                    log.error("Error parsing creation date for product {}: {}", 
+                        product.getId(), e.getMessage());
                 }
             }
+            
+            log.info("Completed updating new product status");
+            
+        } catch (Exception e) {
+            log.error("Error in updateNewProductStatus: {}", e.getMessage(), e);
         }
     }
 }

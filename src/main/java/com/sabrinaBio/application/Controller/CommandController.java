@@ -17,10 +17,11 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
 import com.sabrinaBio.application.Modal.Command;
-import com.sabrinaBio.application.Modal.Status;
+import com.sabrinaBio.application.Modal.CommandProduct;
+import com.sabrinaBio.application.Modal.Product;
 import com.sabrinaBio.application.Repository.CommandRepository;
+import com.sabrinaBio.application.Repository.ProductRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -29,14 +30,29 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CommandController {
 	private final CommandRepository commandRepository;
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-
+	private final ProductRepository productRepository;
+	
 	@PostMapping("/newCommand")
 	public ResponseEntity<?> createNewCommand(@RequestBody String commandJson) throws IOException {
-		ObjectMapper objectMapper = new ObjectMapper();
-		Command command = objectMapper.readValue(commandJson, Command.class);
-		return ResponseEntity.status(HttpStatus.OK).body(commandRepository.save(command));
-	}
+        ObjectMapper objectMapper = new ObjectMapper();
+        Command command = objectMapper.readValue(commandJson, Command.class);
+
+        for (CommandProduct commandProduct : command.getCommandProducts()) {
+            Product product = productRepository.findById(commandProduct.getProduct().getId()).get();
+            int orderedQuantity = commandProduct.getQuantity();
+            if (product.getQuantity() >= orderedQuantity) {
+                product.setQuantity(product.getQuantity() - orderedQuantity); 
+                productRepository.save(product); 
+            } else {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Not enough stock for product: " + product.getName());
+            }
+        }
+
+        // Save the command after updating the products' quantities
+        commandRepository.save(command);
+        return ResponseEntity.status(HttpStatus.OK).body(command);
+    }
 	
 	@GetMapping("/getAllCommands")
 	ResponseEntity<?> getAllCommands() {
