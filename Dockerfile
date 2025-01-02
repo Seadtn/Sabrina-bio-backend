@@ -1,16 +1,12 @@
-# Use an OpenJDK base image
-FROM openjdk:17-jdk-slim
-
-# Set the working directory
+FROM eclipse-temurin:17-jdk-focal as build
 WORKDIR /app
+COPY mvnw .
+COPY .mvn .mvn
+COPY pom.xml .
+COPY src src
+RUN ./mvnw package -DskipTests
 
-# Copy the Spring Boot JAR file
-COPY target/*.jar app.jar
-
-# Expose the default port for Spring Boot
+FROM eclipse-temurin:17-jre-focal
+COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
-
-# Run the Spring Boot application
-ENTRYPOINT ["java", "-jar", "app.jar"]
-
-
+ENTRYPOINT ["java", "-jar", "/app.jar"]
