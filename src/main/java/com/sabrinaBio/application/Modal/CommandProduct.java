@@ -25,6 +25,9 @@ public class CommandProduct {
 
     @ManyToOne
     private Product product;
+    private float prix;
 
     private int quantity;
+    private String unit;
+    private String taste;
 }
