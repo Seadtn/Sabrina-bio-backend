@@ -34,4 +34,6 @@ public class Category {
 	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
 	@JsonIgnore  
 	private List<Product> products;
+
+
 }

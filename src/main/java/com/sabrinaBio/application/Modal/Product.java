@@ -2,11 +2,9 @@ package com.sabrinaBio.application.Modal;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +14,6 @@ import java.util.Map;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
-@Builder
 public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,7 +34,12 @@ public class Product {
     private boolean productNew;
     
     @ManyToOne
+    @JoinColumn(name = "category_id")
     private Category category;
+    
+    @ManyToOne
+    @JoinColumn(name = "souscategory_id")
+    private Souscategory souscategory;
     
     private boolean inSold;
     private boolean promotion;
@@ -54,12 +56,13 @@ public class Product {
     @MapKeyColumn(name = "option_value")
     @Column(name = "price")
     private Map<Integer, Float> prices;
-
+    
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "available_options", joinColumns = @JoinColumn(name = "product_id"))
     private List<AvailableOption> availableOptions = new ArrayList<>();
     
     private boolean hasTaste;
+    
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "tastes", joinColumns = @JoinColumn(name = "product_id"))
     private List<String> tastes = new ArrayList<>();

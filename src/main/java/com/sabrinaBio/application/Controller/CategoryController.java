@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,16 +14,17 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.sabrinaBio.application.Modal.Category;
+import com.sabrinaBio.application.Modal.Souscategory;
 import com.sabrinaBio.application.Repository.CategoryRepository;
+import com.sabrinaBio.application.Repository.SousCategoryRepository;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequestMapping("/api/v1/categoryManagement/")
 @RequiredArgsConstructor
-@Slf4j
 public class CategoryController {
 	final private CategoryRepository categoryRepository;
+	final private SousCategoryRepository sousCategoryRepository;
 	@PostMapping("/newCategory")
 	public ResponseEntity<?> createNewCategory(@RequestBody String categoryJson) throws IOException {
 			    ObjectMapper objectMapper = new ObjectMapper();
@@ -33,5 +35,21 @@ public class CategoryController {
 	@GetMapping("/getAllCategories")
 	ResponseEntity<?> getAllCategories() {
 		return ResponseEntity.status(HttpStatus.OK).body(new Gson().toJson(categoryRepository.findAll()));
+	}
+	
+	@PostMapping("/newSousCategory")
+	public ResponseEntity<?> createNewSousCategory(@RequestBody String categoryJson) throws IOException {
+			    ObjectMapper objectMapper = new ObjectMapper();
+			    Souscategory category = objectMapper.readValue(categoryJson, Souscategory.class);
+	    return ResponseEntity.status(HttpStatus.OK).body(sousCategoryRepository.save(category));
+	}
+	
+	@GetMapping("/getAllSousCategories")
+	ResponseEntity<?> getAllSousCategories() {
+		return ResponseEntity.status(HttpStatus.OK).body(new Gson().toJson(sousCategoryRepository.findAll()));
+	}
+	@GetMapping("/getSousCategoriesbyIdCategory/{id}")
+	ResponseEntity<?> getSousCategoriesByCategoryId(@PathVariable("id") Long id) {
+		return ResponseEntity.status(HttpStatus.OK).body(new Gson().toJson(sousCategoryRepository.findByCategoryId(id)));
 	}
 }
