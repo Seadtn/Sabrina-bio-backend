@@ -74,13 +74,19 @@ public class ProductController {
 		}
 
 	}
-
-	@GetMapping("/getAllProducts")
-	public ResponseEntity<?> getAllProducts(
+	@GetMapping("/getAllProductsbyPages")
+	public ResponseEntity<?> getAllProductsbyPages(
 	    @RequestParam(defaultValue = "0") int offset, 
 	    @RequestParam(defaultValue = "9") int limit
 	) {
 	    List<Product> products = productRepository.findActiveProductsWithPagination(offset, limit);
+	    return ResponseEntity.status(HttpStatus.OK).body(products);
+	}
+	
+	@GetMapping("/getAllProducts")
+	public ResponseEntity<?> getAllProducts(
+	) {
+	    List<Product> products = productRepository.findAll();
 	    return ResponseEntity.status(HttpStatus.OK).body(products);
 	}
 
@@ -115,7 +121,7 @@ public class ProductController {
 
 	@GetMapping("/getProductsInHomePage")
 	public ResponseEntity<?> getProductsSortedByNew() {
-		List<Product> sortedProducts = productRepository.findTop6ByActiveTrueAndSouscategoryEnglishNameEquals("weight gain products");
+		List<Product> sortedProducts = productRepository.findTop6ByActiveTrueAndSouscategoryEnglishNameLike("weight gain products");
 		return ResponseEntity.status(HttpStatus.OK).body(sortedProducts);
 	}
 

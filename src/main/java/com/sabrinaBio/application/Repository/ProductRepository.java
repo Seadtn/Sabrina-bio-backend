@@ -61,7 +61,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 	List<Product> findByStartOrEndDate(@Param("currentDate") String currentDate,
 			@Param("yesterdayDate") String yesterdayDate);
 	
-	List<Product> findTop6ByActiveTrueAndSouscategoryEnglishNameEquals(String englishName);
+	List<Product> findTop6ByActiveTrueAndSouscategoryEnglishNameLike(String englishName);
 	
 	@Query(value = "SELECT * FROM product WHERE active = true LIMIT :limit OFFSET :offset", nativeQuery = true)
 	List<Product> findActiveProductsWithPagination(@Param("offset") int offset, @Param("limit") int limit);
