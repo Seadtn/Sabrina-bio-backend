@@ -21,13 +21,15 @@ public class Product {
     
     @Lob
     @Column(columnDefinition = "LONGTEXT")
-    private String image;
+	private String image;
     
     @Lob
     @Column(columnDefinition = "LONGTEXT")
     private String description;
     
     private String name;
+    private String nameFr;
+    private String nameEng;
     private float price;
     private int quantity;
     private String creationDate;
