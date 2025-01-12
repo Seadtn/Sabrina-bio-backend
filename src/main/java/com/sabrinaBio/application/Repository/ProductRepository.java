@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import com.sabrinaBio.application.Modal.Product;
 import com.sabrinaBio.application.Modal.DTO.BannerDTO;
+import com.sabrinaBio.application.Modal.DTO.SearchDTO;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
@@ -65,4 +66,12 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 	
 	@Query(value = "SELECT * FROM product WHERE active = true LIMIT :limit OFFSET :offset", nativeQuery = true)
 	List<Product> findActiveProductsWithPagination(@Param("offset") int offset, @Param("limit") int limit);
+	
+	@Query("SELECT new com.sabrinaBio.application.Modal.DTO.SearchDTO(" +
+		       "p.id,p.name, p.nameFr, p.nameEng, p.image" +
+		       ") FROM Product p WHERE " +
+		       "LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%')) OR " +
+		       "LOWER(p.nameFr) LIKE LOWER(CONCAT('%', :name, '%')) OR " +
+		       "LOWER(p.nameEng) LIKE LOWER(CONCAT('%', :name, '%'))")
+		List<SearchDTO> searchByName(String name);
 }

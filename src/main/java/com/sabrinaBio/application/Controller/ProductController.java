@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.sabrinaBio.application.Modal.Product;
 import com.sabrinaBio.application.Modal.DTO.BannerDTO;
+import com.sabrinaBio.application.Modal.DTO.SearchDTO;
 import com.sabrinaBio.application.Repository.ProductRepository;
 import com.sabrinaBio.application.services.ProductService;
 
@@ -135,7 +136,10 @@ public class ProductController {
 					.body("Error fetching mixed products: " + e.getMessage());
 		}
 	}
-
+    @GetMapping("/search")
+    public List<SearchDTO> searchProducts(@RequestParam("name") String name) {
+        return productRepository.searchByName(name);
+    }
 	@Scheduled(cron = "0 0 0 * * *", zone = "Africa/Tunis")
 	@Transactional
 	public void updateSaleStatus() {
