@@ -8,6 +8,8 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -75,14 +77,19 @@ public class ProductController {
 		}
 
 	}
-	@GetMapping("/getAllProductsbyPages")
-	public ResponseEntity<?> getAllProductsbyPages(
-	    @RequestParam(defaultValue = "0") int offset, 
-	    @RequestParam(defaultValue = "9") int limit
-	) {
-	    List<Product> products = productRepository.findActiveProductsWithPagination(offset, limit);
-	    return ResponseEntity.status(HttpStatus.OK).body(products);
-	}
+	   @GetMapping("/getAllProductsbyPages")
+	    public ResponseEntity<?> getAllProductsbyPages(
+	        @RequestParam(defaultValue = "0") int offset,
+	        @RequestParam(defaultValue = "9") int limit,
+	        @RequestParam(required = false) Long categoryId,
+	        @RequestParam(required = false) Long subcategoryId,
+	        @RequestParam(required = false) String search,
+	        @RequestParam(required = false) String sort
+	    ) {
+	        Pageable pageable = PageRequest.of(offset / limit, limit);
+	        List<Product> products = productService.findFilteredProducts(categoryId, subcategoryId, search, sort, pageable);
+	        return ResponseEntity.status(HttpStatus.OK).body(products);
+	    }
 	
 	@GetMapping("/getAllProducts")
 	public ResponseEntity<?> getAllProducts(

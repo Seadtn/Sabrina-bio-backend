@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.sabrinaBio.application.Modal.Product;
@@ -11,10 +12,12 @@ import com.sabrinaBio.application.Modal.DTO.BannerDTO;
 import com.sabrinaBio.application.Modal.DTO.MostSellerDTO;
 import com.sabrinaBio.application.Repository.ProductRepository;
 
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 
 @Service
 @AllArgsConstructor
+@Transactional
 public class ProductService {
     private final ProductRepository productRepository;
     
@@ -65,5 +68,21 @@ public class ProductService {
         
         // Limit to 4 products
         return result.size() > 4 ? result.subList(0, 4) : result;
+    }
+    public List<Product> findFilteredProducts(Long categoryId, Long subcategoryId, String search, String sort, Pageable pageable) {
+        List<Product> products = productRepository.findFilteredProducts(categoryId, subcategoryId, search, sort, pageable);
+        
+        // Post-process the list if sorting by price and promotions need to be considered
+        if (sort != null && (sort.equals("highPrice") || sort.equals("lowPrice"))) {
+            products.sort((p1, p2) -> {
+                float price1 = p1.isPromotion() ? p1.getPrice() * (1 - p1.getSoldRatio() * 0.01f) : p1.getPrice();
+                float price2 = p2.isPromotion() ? p2.getPrice() * (1 - p2.getSoldRatio() * 0.01f) : p2.getPrice();
+                
+                int comparison = Float.compare(price1, price2);
+                return sort.equals("highPrice") ? -comparison : comparison;
+            });
+        }
+        
+        return products;
     }
 }

@@ -2,6 +2,7 @@ package com.sabrinaBio.application.Repository;
 
 import java.util.List;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -64,8 +65,31 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 	
 	List<Product> findTop6ByActiveTrueAndSouscategoryEnglishNameLike(String englishName);
 	
-	@Query(value = "SELECT * FROM product WHERE active = true LIMIT :limit OFFSET :offset", nativeQuery = true)
-	List<Product> findActiveProductsWithPagination(@Param("offset") int offset, @Param("limit") int limit);
+    @Query("""
+            SELECT p FROM Product p 
+            WHERE p.active = true 
+            AND (:categoryId IS NULL OR p.category.id = :categoryId)
+            AND (:subcategoryId IS NULL OR p.souscategory.id = :subcategoryId)
+            AND (:search IS NULL OR 
+                LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')) OR 
+                LOWER(p.nameFr) LIKE LOWER(CONCAT('%', :search, '%')) OR 
+                LOWER(p.nameEng) LIKE LOWER(CONCAT('%', :search, '%')))
+            ORDER BY 
+            CASE 
+                WHEN :sort = 'highPrice' THEN p.price
+                WHEN :sort = 'lowPrice' THEN p.price
+                WHEN :sort = 'name' THEN p.name
+                ELSE p.id
+            END
+            DESC
+        """)
+        List<Product> findFilteredProducts(
+            @Param("categoryId") Long categoryId,
+            @Param("subcategoryId") Long subcategoryId,
+            @Param("search") String search,
+            @Param("sort") String sort,
+            Pageable pageable
+        );
 	
 	@Query("SELECT new com.sabrinaBio.application.Modal.DTO.SearchDTO(" +
 		       "p.id,p.name, p.nameFr, p.nameEng, p.image" +
