@@ -17,8 +17,9 @@ public class CorsConfig {
         
         // Allow specific origins
         config.setAllowedOrigins(Arrays.asList(
-        	    "https://sabrina-bio.tn",
-        	    "http://localhost:3000"
+            "https://sabrina-bio.tn",
+            "https://sabrina-bio.tn:8080",
+            "http://localhost:3000"
         ));
         
         // Allow all headers and methods
