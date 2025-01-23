@@ -19,6 +19,8 @@ public class CorsConfig {
         config.setAllowedOrigins(Arrays.asList(
             "http://localhost",
             "http://localhost:80",
+            "http://sabrina-bio.tn",
+            "https://sabrina-bio.tn",
             "http://localhost:3000",
             "http://135.125.1.158",
             "http://135.125.1.158:80"
