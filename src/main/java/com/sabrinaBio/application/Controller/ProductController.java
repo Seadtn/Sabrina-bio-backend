@@ -6,8 +6,10 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.Arrays;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -25,6 +27,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.sabrinaBio.application.Modal.Product;
 import com.sabrinaBio.application.Modal.DTO.BannerDTO;
+import com.sabrinaBio.application.Modal.DTO.PaginatedProductsResponse;
 import com.sabrinaBio.application.Modal.DTO.SearchDTO;
 import com.sabrinaBio.application.Repository.ProductRepository;
 import com.sabrinaBio.application.services.ProductService;
@@ -43,7 +46,7 @@ public class ProductController {
 	private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 	private static final ZoneId TUNISIA_ZONE = ZoneId.of("Africa/Tunis");
 	private final ProductService productService;
-
+	List<Long> predefinedCategoryIds = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L);
 	@PostMapping("/newProduct")
 	public ResponseEntity<?> createNewProduct(@RequestBody String productJson) throws IOException {
 		ObjectMapper objectMapper = new ObjectMapper();
@@ -65,6 +68,8 @@ public class ProductController {
 				if (product.getCreationDate() == null || product.getCreationDate().isEmpty()) {
 					product.setCreationDate(currentDateStr);
 				}
+			}else if(product.isPromotion() && !product.isInSold()) {
+				product.setPromotion(false);
 			}
 
 			Product savedProduct = productRepository.save(product);
@@ -90,6 +95,31 @@ public class ProductController {
 	        List<Product> products = productService.findFilteredProducts(categoryId, subcategoryId, search, sort, pageable);
 	        return ResponseEntity.status(HttpStatus.OK).body(products);
 	    }
+	   
+	   @GetMapping("/getAllProductsbyPagesTable")
+	   public ResponseEntity<?> getAllProductsbyPagesTable(
+	       @RequestParam(defaultValue = "0") int offset,
+	       @RequestParam(defaultValue = "10") int limit,
+	       @RequestParam(required = false) Long categoryId,
+	       @RequestParam(required = false) Long subcategoryId,
+	       @RequestParam(required = false) String search,
+	       @RequestParam(required = false) String sort
+	   ) {
+	       Pageable pageable = PageRequest.of(offset / limit, limit);
+
+	       // Make sure this returns a Page<Product>
+	       Page<Product> productPage = productService.findFilteredProductsPageTable(
+	           categoryId, subcategoryId, search, sort, pageable
+	       );
+
+	       // Create response object
+	       PaginatedProductsResponse response = new PaginatedProductsResponse(
+	           productPage.getContent(),          // the list of products
+	           productPage.getTotalElements()    // total number of products
+	       );
+
+	       return ResponseEntity.ok(response);
+	   }
 	
 	@GetMapping("/getAllProducts")
 	public ResponseEntity<?> getAllProducts(
@@ -121,15 +151,20 @@ public class ProductController {
 		return ResponseEntity.status(HttpStatus.OK).body(productService.getBestSellers());
 	}
 
+	@GetMapping("/getHomePageProducts")
+	public ResponseEntity<?> getHomePageProducts() {
+		List<Product> sortedProducts = productRepository.findTop9ProductsByCategories(predefinedCategoryIds);
+		return ResponseEntity.status(HttpStatus.OK).body(sortedProducts);
+	}
 	@GetMapping("/getRelatedProducts/{categoryId}")
 	public ResponseEntity<?> getRelatedProducts(@PathVariable("categoryId") Long categoryId) {
 		List<Product> relatedProducts = productRepository.findTop4ByActiveTrueAndCategoryIdOrderByIdAsc(categoryId);
 		return ResponseEntity.status(HttpStatus.OK).body(relatedProducts);
 	}
 
-	@GetMapping("/getProductsInHomePage")
+	@GetMapping("/getLatestPromotionedProducts")
 	public ResponseEntity<?> getProductsSortedByNew() {
-		List<Product> sortedProducts = productRepository.findTop6ByActiveTrueAndSouscategoryEnglishNameLike("weight gain products");
+		List<Product> sortedProducts = productRepository.findTop6ByActiveTrueAndPromotionTrueOrderByIdDesc();
 		return ResponseEntity.status(HttpStatus.OK).body(sortedProducts);
 	}
 

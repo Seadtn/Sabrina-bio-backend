@@ -1,10 +1,14 @@
 package com.sabrinaBio.application.services;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.sabrinaBio.application.Modal.Product;
@@ -18,11 +22,12 @@ import lombok.AllArgsConstructor;
 @Service
 @AllArgsConstructor
 @Transactional
+
 public class ProductService {
     private final ProductRepository productRepository;
     
     public List<MostSellerDTO> getBestSellers() {
-        return productRepository.findTop5ByActiveTrueOrderByQuantityAsc()
+        return productRepository.findTop6ByActiveTrueOrderByQuantityAsc()
             .stream()
             .map(this::mapToMostSellerDTO)
             .collect(Collectors.toList());
@@ -44,31 +49,36 @@ public class ProductService {
     }
     
     public List<BannerDTO> getLatestMixedProducts() {
-        // Get promotional products
-        List<BannerDTO> promotionalProducts = productRepository.findTop2PromotionalBanners();
-        
         // Get new products
-        List<BannerDTO> newProducts = productRepository.findTop2NewBanners();
+        List<BannerDTO> newProducts = productRepository.findTop4NewBanners(PageRequest.of(0, 4));
+
+        // Initialize promotional products list
+        List<BannerDTO> promotionalProducts = new ArrayList<>();
         
-        // Calculate how many regular products we need
-        int totalFetched = promotionalProducts.size() + newProducts.size();
-        int additionalRegularCount = Math.max(0, 4 - totalFetched);
-        
-        // Get regular products if needed
-        List<BannerDTO> regularProducts = new ArrayList<>();
-        if (additionalRegularCount > 0) {
-			regularProducts = productRepository.findRegularBanners();
+        // If fewer than 4 new products, fetch promotional ones to fill the gap
+        if (newProducts.size() < 4) {
+            int remaining = 4 - newProducts.size();
+            promotionalProducts = productRepository.findTopPromotionalBanners(PageRequest.of(0, remaining));
         }
-        
-        // Combine all products
-        List<BannerDTO> result = new ArrayList<>();
-        result.addAll(promotionalProducts);
+
+        // Calculate how many more products we need
+        int totalFetched = newProducts.size() + promotionalProducts.size();
+        int remaining = 4 - totalFetched;
+
+        // Fetch regular products if needed
+        List<BannerDTO> regularProducts = remaining > 0
+            ? productRepository.findRegularBanners(PageRequest.of(0, remaining))
+            : Collections.emptyList();
+
+        // Combine all lists
+        List<BannerDTO> result = new ArrayList<>(4);
         result.addAll(newProducts);
+        result.addAll(promotionalProducts);
         result.addAll(regularProducts);
-        
-        // Limit to 4 products
+        // Return exactly 4 products
         return result.size() > 4 ? result.subList(0, 4) : result;
     }
+
     public List<Product> findFilteredProducts(Long categoryId, Long subcategoryId, String search, String sort, Pageable pageable) {
         List<Product> products = productRepository.findFilteredProducts(categoryId, subcategoryId, search, sort, pageable);
         
@@ -85,4 +95,30 @@ public class ProductService {
         
         return products;
     }
+    public Page<Product> findFilteredProductsPageTable(
+    	    Long categoryId, Long subcategoryId, String search, String sort, Pageable pageable
+    	) {
+    	    Sort sorting = pageable.getSort(); // Use the sort from pageable if it's passed in.
+    	    
+    	    // If sort isn't applied yet, apply it based on the provided parameter
+    	    if (sorting.isUnsorted()) {
+    	        if ("highPrice".equals(sort)) {
+    	            sorting = Sort.by("price").descending();
+    	        } else if ("lowPrice".equals(sort)) {
+    	            sorting = Sort.by("price").ascending();
+    	        } else if ("name".equals(sort)) {
+    	            sorting = Sort.by("name").ascending();
+    	        } else {
+    	            sorting = Sort.by("id").descending();
+    	        }
+    	    }
+    	    
+    	    // Apply the sorting to the pageable object
+    	    pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sorting);
+
+    	    // Fetch the paginated products
+    	    return productRepository.findFilteredProductsTable(categoryId, subcategoryId, search, pageable);
+    	}
+
+
 }

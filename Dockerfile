@@ -4,6 +4,8 @@ COPY mvnw .
 COPY .mvn .mvn
 COPY pom.xml .
 COPY src src
+
+RUN chmod +x mvnw  
 RUN ./mvnw package -DskipTests
 
 FROM eclipse-temurin:17-jre-focal

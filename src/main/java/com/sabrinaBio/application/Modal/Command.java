@@ -33,6 +33,7 @@ public class Command {
     private String lastName;
     private String mail;
     private String phone;
+    private String phone2;
     private String creationDate;
     private String confirmationDate;
     private String city;

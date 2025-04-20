@@ -10,6 +10,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
 import jakarta.persistence.OneToMany;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,10 +31,12 @@ public class Category {
 	private String frenchName;
 	private String englishName;
 
+    @Lob
+    private byte[] image; 
 	private String creationDate;
 	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
 	@JsonIgnore  
 	private List<Product> products;
-
+	private long tri ;
 
 }
