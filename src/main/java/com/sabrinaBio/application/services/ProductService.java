@@ -11,10 +11,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import com.sabrinaBio.application.Modal.Category;
 import com.sabrinaBio.application.Modal.Product;
+import com.sabrinaBio.application.Modal.Souscategory;
 import com.sabrinaBio.application.Modal.DTO.BannerDTO;
 import com.sabrinaBio.application.Modal.DTO.MostSellerDTO;
+import com.sabrinaBio.application.Repository.CategoryRepository;
 import com.sabrinaBio.application.Repository.ProductRepository;
+import com.sabrinaBio.application.Repository.SousCategoryRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
@@ -25,7 +29,9 @@ import lombok.AllArgsConstructor;
 
 public class ProductService {
     private final ProductRepository productRepository;
-    
+	final private CategoryRepository categoryRepository;
+	final private SousCategoryRepository sousCategoryRepository;
+
     public List<MostSellerDTO> getBestSellers() {
         return productRepository.findTop6ByActiveTrueOrderByQuantityAsc()
             .stream()
@@ -119,6 +125,42 @@ public class ProductService {
     	    // Fetch the paginated products
     	    return productRepository.findFilteredProductsTable(categoryId, subcategoryId, search, pageable);
     	}
+
+    public Category promoteSubcategory(Long sousCategoryId) {
+        // 1. Fetch the subcategory or throw if not found
+        Souscategory souscategory = sousCategoryRepository.findById(sousCategoryId)
+            .orElseThrow(() -> new RuntimeException("Sous-category not found"));
+
+        // 2. Determine the new 'tri' value
+        long totalCategories = categoryRepository.count();
+
+        // 3. Create a new category from the sous-category's data
+        Category newCategory = Category.builder()
+            .arabicName(souscategory.getArabicName())
+            .frenchName(souscategory.getFrenchName())
+            .englishName(souscategory.getEnglishName())
+            .creationDate(souscategory.getCreationDate())
+            .tri(totalCategories + 1)
+            .products(new ArrayList<>())
+            .build();
+
+        // 4. Save the new category
+        Category savedCategory = categoryRepository.save(newCategory);
+
+        // 5. Reassign products
+        List<Product> products = productRepository.findBySouscategoryId(sousCategoryId);
+        for (Product product : products) {
+            product.setCategory(savedCategory);
+            product.setSouscategory(null);
+        }
+        productRepository.saveAll(products);
+
+        // 6. Delete the subcategory now that it's promoted
+        sousCategoryRepository.delete(souscategory);
+
+        return savedCategory;
+    }
+
 
 
 }

@@ -47,6 +47,7 @@ public class Product {
     private boolean promotion;
     private boolean freeDelivery;
     private int soldRatio;
+    private long newPrice;
     private String startDate;
     private String lastDate;
     private boolean active;

@@ -19,4 +19,5 @@ public class BannerDTO {
 	private String image;
 	private boolean promotion;
 	private int soldRatio;
+	private long newPrice;
 }

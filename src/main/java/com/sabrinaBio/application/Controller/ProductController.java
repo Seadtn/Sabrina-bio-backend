@@ -6,8 +6,12 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -47,6 +51,7 @@ public class ProductController {
 	private static final ZoneId TUNISIA_ZONE = ZoneId.of("Africa/Tunis");
 	private final ProductService productService;
 	List<Long> predefinedCategoryIds = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L);
+
 	@PostMapping("/newProduct")
 	public ResponseEntity<?> createNewProduct(@RequestBody String productJson) throws IOException {
 		ObjectMapper objectMapper = new ObjectMapper();
@@ -68,7 +73,7 @@ public class ProductController {
 				if (product.getCreationDate() == null || product.getCreationDate().isEmpty()) {
 					product.setCreationDate(currentDateStr);
 				}
-			}else if(product.isPromotion() && !product.isInSold()) {
+			} else if (product.isPromotion() && !product.isInSold()) {
 				product.setPromotion(false);
 			}
 
@@ -82,50 +87,41 @@ public class ProductController {
 		}
 
 	}
-	   @GetMapping("/getAllProductsbyPages")
-	    public ResponseEntity<?> getAllProductsbyPages(
-	        @RequestParam(defaultValue = "0") int offset,
-	        @RequestParam(defaultValue = "9") int limit,
-	        @RequestParam(required = false) Long categoryId,
-	        @RequestParam(required = false) Long subcategoryId,
-	        @RequestParam(required = false) String search,
-	        @RequestParam(required = false) String sort
-	    ) {
-	        Pageable pageable = PageRequest.of(offset / limit, limit);
-	        List<Product> products = productService.findFilteredProducts(categoryId, subcategoryId, search, sort, pageable);
-	        return ResponseEntity.status(HttpStatus.OK).body(products);
-	    }
-	   
-	   @GetMapping("/getAllProductsbyPagesTable")
-	   public ResponseEntity<?> getAllProductsbyPagesTable(
-	       @RequestParam(defaultValue = "0") int offset,
-	       @RequestParam(defaultValue = "10") int limit,
-	       @RequestParam(required = false) Long categoryId,
-	       @RequestParam(required = false) Long subcategoryId,
-	       @RequestParam(required = false) String search,
-	       @RequestParam(required = false) String sort
-	   ) {
-	       Pageable pageable = PageRequest.of(offset / limit, limit);
 
-	       // Make sure this returns a Page<Product>
-	       Page<Product> productPage = productService.findFilteredProductsPageTable(
-	           categoryId, subcategoryId, search, sort, pageable
-	       );
+	@GetMapping("/getAllProductsbyPages")
+	public ResponseEntity<?> getAllProductsbyPages(@RequestParam(defaultValue = "0") int offset,
+			@RequestParam(defaultValue = "9") int limit, @RequestParam(required = false) Long categoryId,
+			@RequestParam(required = false) Long subcategoryId, @RequestParam(required = false) String search,
+			@RequestParam(required = false) String sort) {
+		Pageable pageable = PageRequest.of(offset / limit, limit);
+		List<Product> products = productService.findFilteredProducts(categoryId, subcategoryId, search, sort, pageable);
+		return ResponseEntity.status(HttpStatus.OK).body(products);
+	}
 
-	       // Create response object
-	       PaginatedProductsResponse response = new PaginatedProductsResponse(
-	           productPage.getContent(),          // the list of products
-	           productPage.getTotalElements()    // total number of products
-	       );
+	@GetMapping("/getAllProductsbyPagesTable")
+	public ResponseEntity<?> getAllProductsbyPagesTable(@RequestParam(defaultValue = "0") int offset,
+			@RequestParam(defaultValue = "10") int limit, @RequestParam(required = false) Long categoryId,
+			@RequestParam(required = false) Long subcategoryId, @RequestParam(required = false) String search,
+			@RequestParam(required = false) String sort) {
+		Pageable pageable = PageRequest.of(offset / limit, limit);
 
-	       return ResponseEntity.ok(response);
-	   }
-	
+		// Make sure this returns a Page<Product>
+		Page<Product> productPage = productService.findFilteredProductsPageTable(categoryId, subcategoryId, search,
+				sort, pageable);
+
+		// Create response object
+		PaginatedProductsResponse response = new PaginatedProductsResponse(productPage.getContent(), // the list of
+																										// products
+				productPage.getTotalElements() // total number of products
+		);
+
+		return ResponseEntity.ok(response);
+	}
+
 	@GetMapping("/getAllProducts")
-	public ResponseEntity<?> getAllProducts(
-	) {
-	    List<Product> products = productRepository.findAll();
-	    return ResponseEntity.status(HttpStatus.OK).body(products);
+	public ResponseEntity<?> getAllProducts() {
+		List<Product> products = productRepository.findAll();
+		return ResponseEntity.status(HttpStatus.OK).body(products);
 	}
 
 	@GetMapping("/getProductById/{id}")
@@ -156,6 +152,7 @@ public class ProductController {
 		List<Product> sortedProducts = productRepository.findTop9ProductsByCategories(predefinedCategoryIds);
 		return ResponseEntity.status(HttpStatus.OK).body(sortedProducts);
 	}
+
 	@GetMapping("/getRelatedProducts/{categoryId}")
 	public ResponseEntity<?> getRelatedProducts(@PathVariable("categoryId") Long categoryId) {
 		List<Product> relatedProducts = productRepository.findTop4ByActiveTrueAndCategoryIdOrderByIdAsc(categoryId);
@@ -178,10 +175,54 @@ public class ProductController {
 					.body("Error fetching mixed products: " + e.getMessage());
 		}
 	}
-    @GetMapping("/search")
-    public List<SearchDTO> searchProducts(@RequestParam("name") String name) {
-        return productRepository.searchByName(name);
-    }
+
+	@GetMapping("/search")
+	public List<SearchDTO> searchProducts(@RequestParam("name") String name) {
+	    if (name == null || name.isEmpty()) {
+	        return Collections.emptyList();
+	    }
+
+	    // Normalize the search term
+	    String normalizedSearchTerm = normalizeArabic(name.trim());
+
+	    // Search with variations of the term
+	    List<SearchDTO> results = productRepository.searchByName(normalizedSearchTerm);
+
+	    // If no results and it's a multi-word search, try word by word
+	    if (results.isEmpty() && name.contains(" ")) {
+	        Set<SearchDTO> combinedResults = new HashSet<>();
+	        String[] words = name.split("\\s+");
+	        for (String word : words) {
+	            if (word.length() >= 2) {
+	                String normalizedWord = normalizeArabic(word);  // Normalize word
+	                combinedResults.addAll(productRepository.searchByName(normalizedWord));
+	            }
+	        }
+	        return new ArrayList<>(combinedResults);
+	    }
+
+	    return results;
+	}
+
+
+	// Improved Arabic normalization method
+	public String normalizeArabic(String input) {
+	    if (input == null) return null;
+
+	    return input
+	        .replaceAll("[\\u064B-\\u065F]", "") // Remove diacritics
+	        .replaceAll("ـ", "")                 // 🔥 Remove tatweel (this is key)
+	        .replace("أ", "ا")
+	        .replace("إ", "ا")
+	        .replace("آ", "ا")
+	        .replace("ة", "ه")
+	        .replace("ى", "ي")
+	        .replace("ؤ", "و")
+	        .replace("ئ", "ي")
+	        .trim();
+	}
+
+
 	@Scheduled(cron = "0 0 0 * * *", zone = "Africa/Tunis")
 	@Transactional
 	public void updateSaleStatus() {

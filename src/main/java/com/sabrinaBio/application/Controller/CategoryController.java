@@ -17,6 +17,7 @@ import com.sabrinaBio.application.Modal.Category;
 import com.sabrinaBio.application.Modal.Souscategory;
 import com.sabrinaBio.application.Repository.CategoryRepository;
 import com.sabrinaBio.application.Repository.SousCategoryRepository;
+import com.sabrinaBio.application.services.ProductService;
 
 import lombok.RequiredArgsConstructor;
 @RestController
@@ -25,6 +26,8 @@ import lombok.RequiredArgsConstructor;
 public class CategoryController {
 	final private CategoryRepository categoryRepository;
 	final private SousCategoryRepository sousCategoryRepository;
+	private final ProductService productService;
+
 	@PostMapping("/newCategory")
 	public ResponseEntity<?> createNewCategory(@RequestBody String categoryJson) throws IOException {
 			    ObjectMapper objectMapper = new ObjectMapper();
@@ -51,5 +54,9 @@ public class CategoryController {
 	@GetMapping("/getSousCategoriesbyIdCategory/{id}")
 	ResponseEntity<?> getSousCategoriesByCategoryId(@PathVariable("id") Long id) {
 		return ResponseEntity.status(HttpStatus.OK).body(new Gson().toJson(sousCategoryRepository.findByCategoryId(id)));
+	}
+	@PostMapping("/promote-souscategory/{id}")
+	public ResponseEntity<Category> promoteSubcategory(@PathVariable Long id) {
+	    return ResponseEntity.ok(productService.promoteSubcategory(id));
 	}
 }
