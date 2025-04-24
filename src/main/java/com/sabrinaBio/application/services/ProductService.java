@@ -46,6 +46,7 @@ public class ProductService {
             .nameFr(product.getNameFr())
             .nameEng(product.getNameEng())
             .price(product.getPrice())
+            .freeDelivery(product.isFreeDelivery())
             .image(product.getImage())
             .prices(product.getPrices())
             .promotion(product.isPromotion())

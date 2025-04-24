@@ -23,6 +23,7 @@ public class MostSellerDTO {
     private String nameFr;
     private String nameEng;
     private String image;
+    private boolean freeDelivery;
     private float price;
     private Map<Integer, Float> prices;
     private boolean promotion;
