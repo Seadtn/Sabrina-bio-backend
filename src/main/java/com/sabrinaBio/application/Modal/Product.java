@@ -22,9 +22,19 @@ public class Product {
     @Lob
     @Column(columnDefinition = "LONGTEXT")
 	private String image;
+    @Lob
+    @Column(columnDefinition = "LONGBLOB")
+    private byte[] image2; // image2 as byte[]
     
     @Lob
-    @Column(columnDefinition = "LONGTEXT")
+    @Column(columnDefinition = "LONGBLOB")
+    private byte[] image3; // image3 as byte[]
+    
+    @Lob
+    @Column(columnDefinition = "LONGBLOB")
+    private byte[] image4; // image4 as byte[]
+    @Lob
+    @Column(columnDefinition = "LONGBLOB")
     private String description;
     
     private String name;

@@ -32,12 +32,18 @@ public class CategoryController {
 	public ResponseEntity<?> createNewCategory(@RequestBody String categoryJson) throws IOException {
 			    ObjectMapper objectMapper = new ObjectMapper();
 			    Category category = objectMapper.readValue(categoryJson, Category.class);
+			    if(category.getTri()==0) {
+				    long totalCategories = categoryRepository.count();
+				    
+				    category.setTri(totalCategories+1);
+			    }
+
 	    return ResponseEntity.status(HttpStatus.OK).body(categoryRepository.save(category));
 	}
 	
 	@GetMapping("/getAllCategories")
 	ResponseEntity<?> getAllCategories() {
-		return ResponseEntity.status(HttpStatus.OK).body(new Gson().toJson(categoryRepository.findAll()));
+		return ResponseEntity.status(HttpStatus.OK).body(new Gson().toJson(categoryRepository.findAllByOrderByTriAsc()));
 	}
 	
 	@PostMapping("/newSousCategory")
