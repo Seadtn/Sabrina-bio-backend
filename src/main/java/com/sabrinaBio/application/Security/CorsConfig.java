@@ -20,7 +20,7 @@ public class CorsConfig {
             "https://sabrina-bio.tn",
             "https://sabrina-bio.tn:8080",
             "http://localhost:3000",
-            "http://192.168.1.4:3000"
+            "http://192.168.1.10:3000"
         ));
         
         // Allow all headers and methods
