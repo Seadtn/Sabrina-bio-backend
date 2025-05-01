@@ -4,8 +4,10 @@ import java.util.List;
 import java.util.Map;
 
 import com.sabrinaBio.application.Modal.AvailableOption;
+import com.sabrinaBio.application.Modal.ProductType;
 
-
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,6 +26,8 @@ public class MostSellerDTO {
     private String nameEng;
     private String image;
     private boolean freeDelivery;
+    @Enumerated(EnumType.STRING)
+    private ProductType productType;
     private float price;
     private Map<Integer, Float> prices;
     private boolean promotion;
