@@ -191,7 +191,7 @@ public class ProductController {
 	    // If no results and it's a multi-word search, try word by word
 	    if (results.isEmpty() && name.contains(" ")) {
 	        Set<SearchDTO> combinedResults = new HashSet<>();
-	        String[] words = name.split("\\s+");
+	        String[] words = name.split(" ");
 	        for (String word : words) {
 	            if (word.length() >= 2) {
 	                String normalizedWord = normalizeArabic(word);  // Normalize word
@@ -212,13 +212,6 @@ public class ProductController {
 	    return input
 	        .replaceAll("[\\u064B-\\u065F]", "") // Remove diacritics
 	        .replaceAll("ـ", "")                 // 🔥 Remove tatweel (this is key)
-	        .replace("أ", "ا")
-	        .replace("إ", "ا")
-	        .replace("آ", "ا")
-	        .replace("ة", "ه")
-	        .replace("ى", "ي")
-	        .replace("ؤ", "و")
-	        .replace("ئ", "ي")
 	        .trim();
 	}
 

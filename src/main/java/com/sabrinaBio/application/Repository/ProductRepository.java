@@ -114,11 +114,13 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 	Page<Product> findFilteredProductsTable(@Param("categoryId") Long categoryId,
 			@Param("subcategoryId") Long subcategoryId, @Param("search") String search, Pageable pageable);
 
-	@Query("SELECT new com.sabrinaBio.application.Modal.DTO.SearchDTO(" + "p.id, p.name, p.nameFr, p.nameEng, p.image) "
-			+ "FROM Product p WHERE " + "REPLACE(p.name, 'ـ', '') LIKE CONCAT('%', :name, '%') OR "
-			+ "REPLACE(p.nameFr, 'ـ', '') LIKE CONCAT('%', :name, '%') OR "
-			+ "REPLACE(p.nameEng, 'ـ', '') LIKE CONCAT('%', :name, '%')")
-	List<SearchDTO> searchByName(@Param("name") String name);
+	@Query("SELECT new com.sabrinaBio.application.Modal.DTO.SearchDTO(" +
+		       "p.id, p.name, p.nameFr, p.nameEng, p.image) " +
+		       "FROM Product p WHERE " +
+		       "REPLACE(REPLACE(REPLACE(REPLACE(p.name, 'ـ', ''), '  ', ' '), '  ', ' '), '  ', ' ') LIKE CONCAT('%', :name, '%') OR " +
+		       "REPLACE(REPLACE(REPLACE(REPLACE(p.nameFr, 'ـ', ''), '  ', ' '), '  ', ' '), '  ', ' ') LIKE CONCAT('%', :name, '%') OR " +
+		       "REPLACE(REPLACE(REPLACE(REPLACE(p.nameEng, 'ـ', ''), '  ', ' '), '  ', ' '), '  ', ' ') LIKE CONCAT('%', :name, '%')")
+		List<SearchDTO> searchByName(@Param("name") String name);
 	
 	List<Product> findBySouscategoryId(Long id);
 
