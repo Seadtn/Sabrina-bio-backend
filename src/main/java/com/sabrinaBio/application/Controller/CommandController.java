@@ -1,6 +1,7 @@
 package com.sabrinaBio.application.Controller;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -9,6 +10,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,6 +24,7 @@ import com.sabrinaBio.application.Modal.Command;
 import com.sabrinaBio.application.Modal.CommandProduct;
 import com.sabrinaBio.application.Modal.Product;
 import com.sabrinaBio.application.Modal.Status;
+import com.sabrinaBio.application.Modal.DTO.CommandDTO;
 import com.sabrinaBio.application.Modal.DTO.CommandPaginatedResponse;
 import com.sabrinaBio.application.Modal.DTO.CommandStats;
 import com.sabrinaBio.application.Repository.CommandRepository;
@@ -65,7 +68,7 @@ public class CommandController {
 
 	    Pageable pageable = PageRequest.of(offset, limit, Sort.by(Sort.Order.desc("id")));
 	    
-	    Page<Command> paginatedCommands = commandRepository.findAll(pageable);
+	    Page<CommandDTO> paginatedCommands = commandRepository.findAllAsDTO(pageable);
 	    long totalElements = commandRepository.count();
 
 	    long acceptedCount = commandRepository.countByStatus(Status.Accepted);
@@ -90,7 +93,11 @@ public class CommandController {
 	    ));
 	}
 
-
+	@GetMapping("/commands/{id}")
+	public ResponseEntity<?> getCommandById(@PathVariable Long id) {
+	    Optional<Command> commandOpt = commandRepository.findById(id);
+	        return ResponseEntity.ok(commandOpt.get());
+	}
 	@PostMapping("/changeCommandStatus")
 	public ResponseEntity<?> changeCommandStatus(@RequestBody String commandJson) throws JsonMappingException, JsonProcessingException {
 		ObjectMapper objectMapper = new ObjectMapper();
