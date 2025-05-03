@@ -61,7 +61,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
 	// Gett all new products
 	List<Product> findByActiveTrueAndProductNewTrue();
-
+	
 	@Query(value = "SELECT * FROM product p WHERE p.active = true AND p.category_id IN :categoryIds ORDER BY p.id DESC LIMIT 9", nativeQuery = true)
 	List<Product> findTop9ProductsByCategories(@Param("categoryIds") List<Long> categoryIds);
 

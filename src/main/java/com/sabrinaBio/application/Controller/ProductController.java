@@ -32,6 +32,7 @@ import com.google.gson.Gson;
 import com.sabrinaBio.application.Modal.Product;
 import com.sabrinaBio.application.Modal.DTO.BannerDTO;
 import com.sabrinaBio.application.Modal.DTO.PaginatedProductsResponse;
+import com.sabrinaBio.application.Modal.DTO.ProductAdminDTO;
 import com.sabrinaBio.application.Modal.DTO.SearchDTO;
 import com.sabrinaBio.application.Repository.ProductRepository;
 import com.sabrinaBio.application.services.ProductService;
@@ -106,7 +107,7 @@ public class ProductController {
 		Pageable pageable = PageRequest.of(offset / limit, limit);
 
 		// Make sure this returns a Page<Product>
-		Page<Product> productPage = productService.findFilteredProductsPageTable(categoryId, subcategoryId, search,
+		Page<ProductAdminDTO> productPage = productService.findFilteredProductsPageTable(categoryId, subcategoryId, search,
 				sort, pageable);
 
 		// Create response object
