@@ -31,6 +31,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.sabrinaBio.application.Modal.Product;
 import com.sabrinaBio.application.Modal.DTO.BannerDTO;
+import com.sabrinaBio.application.Modal.DTO.MostSellerDTO;
 import com.sabrinaBio.application.Modal.DTO.PaginatedProductsResponse;
 import com.sabrinaBio.application.Modal.DTO.ProductAdminDTO;
 import com.sabrinaBio.application.Modal.DTO.SearchDTO;
@@ -95,7 +96,7 @@ public class ProductController {
 			@RequestParam(required = false) Long subcategoryId, @RequestParam(required = false) String search,
 			@RequestParam(required = false) String sort) {
 		Pageable pageable = PageRequest.of(offset / limit, limit);
-		List<Product> products = productService.findFilteredProducts(categoryId, subcategoryId, search, sort, pageable);
+		List<MostSellerDTO> products = productService.findFilteredProducts(categoryId, subcategoryId, search, sort, pageable);
 		return ResponseEntity.status(HttpStatus.OK).body(products);
 	}
 

@@ -81,24 +81,26 @@ public class ProductService {
 		return result.size() > 4 ? result.subList(0, 4) : result;
 	}
 
-	public List<Product> findFilteredProducts(Long categoryId, Long subcategoryId, String search, String sort,
-			Pageable pageable) {
-		List<Product> products = productRepository.findFilteredProducts(categoryId, subcategoryId, search, sort,
-				pageable);
+	public List<MostSellerDTO> findFilteredProducts(Long categoryId, Long subcategoryId, String search, String sort,
+	        Pageable pageable) {
 
-		// Post-process the list if sorting by price and promotions need to be
-		// considered
-		if (sort != null && (sort.equals("highPrice") || sort.equals("lowPrice"))) {
-			products.sort((p1, p2) -> {
-				float price1 = p1.isPromotion() ? p1.getPrice() * (1 - p1.getSoldRatio() * 0.01f) : p1.getPrice();
-				float price2 = p2.isPromotion() ? p2.getPrice() * (1 - p2.getSoldRatio() * 0.01f) : p2.getPrice();
+	    List<Product> products = productRepository.findFilteredProducts(categoryId, subcategoryId, search, sort, pageable);
 
-				int comparison = Float.compare(price1, price2);
-				return sort.equals("highPrice") ? -comparison : comparison;
-			});
-		}
+	    // Post-process sorting if needed
+	    if (sort != null && (sort.equals("highPrice") || sort.equals("lowPrice"))) {
+	        products.sort((p1, p2) -> {
+	            float price1 = p1.isPromotion() ? p1.getPrice() * (1 - p1.getSoldRatio() * 0.01f) : p1.getPrice();
+	            float price2 = p2.isPromotion() ? p2.getPrice() * (1 - p2.getSoldRatio() * 0.01f) : p2.getPrice();
 
-		return products;
+	            int comparison = Float.compare(price1, price2);
+	            return sort.equals("highPrice") ? -comparison : comparison;
+	        });
+	    }
+
+	    // Convert to MostSellerDTO
+	    return products.stream()
+	            .map(this::mapToMostSellerDTO)
+	            .collect(Collectors.toList());
 	}
 
 	public Page<ProductAdminDTO> findFilteredProductsPageTable(Long categoryId, Long subcategoryId, String search,
