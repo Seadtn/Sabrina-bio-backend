@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  # ✅ Reverse Proxy (Traefik)
+  traefik:
+    image: traefik:v3.1
+    container_name: traefik
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedByDefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencrypt.acme.email=sabrina.bio.ovh@gmail.com"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/acme.json:/letsencrypt/acme.json
+    networks:
+      - app-network
+    restart: always
+
+  frontend:
+    build:
+      context: ./sabrina-bio
+      dockerfile: Dockerfile
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`sabrina-bio.tn`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+    networks:
+      - app-network
+    depends_on:
+      - backend
+    restart: always
+
+  backend:
+    build:
+      context: ./Sabrina-bio-backend
+      dockerfile: Dockerfile
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`api.sabrina-bio.tn`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.backend.loadbalancer.server.port=8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://135.125.1.158:3306/SabrinaBio?createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=SabrinaBio1!
+      - ALLOWED_ORIGINS=https://sabrina-bio.tn,https://api.sabrina-bio.tn
+      - JAVA_OPTS=-Xmx512m -Xms256m -XX:+UseG1GC -XX:+ExitOnOutOfMemoryError
+    networks:
+      - app-network
+    restart: always
+
+networks:
+  app-network:
+    driver: bridge

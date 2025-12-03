@@ -33,6 +33,7 @@ public class ProductAdminDTO {
     private String description;
     private boolean freeDelivery;
     private boolean productNew;
+    private boolean active;
     private String startDate;
     private String lastDate;
     private ProductType productType;

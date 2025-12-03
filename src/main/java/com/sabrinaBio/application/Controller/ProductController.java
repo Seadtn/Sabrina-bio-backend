@@ -143,6 +143,18 @@ public class ProductController {
 			throw new Exception("Failed to delete product with id: " + id + ". Error: " + e.getMessage());
 		}
 	}
+	
+	@PostMapping("/activeProduct/{id}")
+	public void activeProduct(@PathVariable("id") Long id) throws Exception {
+		try {
+			Product product = productRepository.findById(id).get();
+			product.setActive(true);
+			productRepository.save(product);
+
+		} catch (Exception e) {
+			throw new Exception("Failed to delete product with id: " + id + ". Error: " + e.getMessage());
+		}
+	}
 
 	@GetMapping("/getBestSellers")
 	public ResponseEntity<?> getBestSellers() {

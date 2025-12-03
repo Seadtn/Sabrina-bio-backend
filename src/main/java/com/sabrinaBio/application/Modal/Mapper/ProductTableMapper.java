@@ -31,6 +31,7 @@ public class ProductTableMapper {
                 .taste(product.getTastes())
                 .availableOptions(product.getAvailableOptions())
                 .hasTaste(product.isHasTaste())
+                .active(product.isActive())
                 .description(product.getDescription())
                 .productNew(product.isProductNew())
                 .categoryName(product.getCategory() != null ? product.getCategory().getFrenchName() : null)

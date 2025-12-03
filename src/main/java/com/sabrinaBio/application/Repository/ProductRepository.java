@@ -101,8 +101,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
 	@Query("""
 			    SELECT p FROM Product p
-			    WHERE p.active = true
-			    AND (:categoryId IS NULL OR p.category.id = :categoryId)
+			    WHERE (:categoryId IS NULL OR p.category.id = :categoryId)
 			    AND (:subcategoryId IS NULL OR p.souscategory.id = :subcategoryId)
 			    AND (
 			        :search IS NULL OR
