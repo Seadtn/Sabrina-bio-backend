@@ -115,11 +115,14 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
 	@Query("SELECT new com.sabrinaBio.application.Modal.DTO.SearchDTO(" +
 		       "p.id, p.name, p.nameFr, p.nameEng, p.image) " +
-		       "FROM Product p WHERE " +
+		       "FROM Product p " +
+		       "WHERE p.active = true AND (" +
 		       "REPLACE(REPLACE(REPLACE(REPLACE(p.name, 'ـ', ''), '  ', ' '), '  ', ' '), '  ', ' ') LIKE CONCAT('%', :name, '%') OR " +
 		       "REPLACE(REPLACE(REPLACE(REPLACE(p.nameFr, 'ـ', ''), '  ', ' '), '  ', ' '), '  ', ' ') LIKE CONCAT('%', :name, '%') OR " +
-		       "REPLACE(REPLACE(REPLACE(REPLACE(p.nameEng, 'ـ', ''), '  ', ' '), '  ', ' '), '  ', ' ') LIKE CONCAT('%', :name, '%')")
+		       "REPLACE(REPLACE(REPLACE(REPLACE(p.nameEng, 'ـ', ''), '  ', ' '), '  ', ' '), '  ', ' ') LIKE CONCAT('%', :name, '%')" +
+		       ")")
 		List<SearchDTO> searchByName(@Param("name") String name);
+
 	
 	List<Product> findBySouscategoryId(Long id);
 
